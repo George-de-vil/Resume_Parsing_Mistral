@@ -1,0 +1,8 @@
+requests
+langchain
+langchain-community
+python-docx
+pypdf
+tqdm
+python-dotenv
+docx2txt

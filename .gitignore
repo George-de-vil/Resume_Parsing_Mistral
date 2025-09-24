@@ -1,0 +1,13 @@
+# Virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Outputs
+outputs/
+
+# Environment files
+.env
+service_account.json
