@@ -6,3 +6,4 @@ pypdf
 tqdm
 python-dotenv
 docx2txt
+streamlit
