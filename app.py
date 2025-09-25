@@ -52,7 +52,7 @@ if jd_file and resume_file:
             st.json(parsed_json)  # Display JSON in Streamlit
 
             # Optional: save JSON locally
-            save_json_incremental(parsed_json)
+            save_json_incremental(parsed_json, resume_path)
             st.info("Response saved in outputs folder.")
         except json.JSONDecodeError:
             st.error("❌ Failed to parse JSON. Showing raw response:")

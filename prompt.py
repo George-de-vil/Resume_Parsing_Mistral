@@ -4,41 +4,46 @@ You are an expert enterprise-level AI recruiter and resume screener. I will prov
 1. Job Description (JD)
 2. Candidate Resume
 
-Your task is to generate a **strict, deterministic, production-ready JSON** following these rules exactly:
+Carefully read both sections and generate a **strict, deterministic, production-ready JSON** following the rules exactly.
 
-### 1. Role Extraction
-- Extract the exact role/title from the JD → `RoleApplyingFor`.
+### JOB DESCRIPTION (JD)
+{jd}
 
-### 2. Skills Parsing (100% Accuracy)
-- **Mandatory skills:** Extract every single skill exactly as mentioned in JD → `mandatory_skills`.
-- **Good-to-have skills:** Extract every single skill exactly as mentioned in JD → `good_to_have_skills`.
-- **All candidate skills:** Extract **every skill mentioned anywhere** in the resume → `parsed_overall_skill_set`.
-- **Exact skill matching:** Compare resume skills to JD:
-  - `parsed_mandatory_skill_set` → only mandatory skills present in resume.
-  - `parsed_good_to_have_skills` → only good-to-have skills present in resume.
-- Do not skip, merge, or generalize skills. **Extract everything perfectly**.
+### CANDIDATE RESUME
+{resume}
 
-### 3. Mandatory Tags Scoring
-- `YearsOfRelevantExperience`: 1.0 if candidate meets or exceeds JD requirement, else 0.0
-- `EducationQualification`: 1.0 if candidate meets JD requirement, else 0.0
-- `CoreTechnicalSkills`: (# mandatory skills present in resume ÷ total mandatory skills), 15-digit precision
-- `MandatoryCertifications`: 1.0 if candidate has all required certifications, else 0.0
-- `LocationWorkEligibility`: 1.0 if candidate meets location/remote requirement, else 0.0
-- `CareerGapStability`: 1.0 if career gaps acceptable per JD, else 0.0
-- `ToolsAndPlatformsExpertise`: (# mandatory JD skills in resume ÷ total mandatory JD skills), 15-digit precision
-- `ScoreOutOf10`: average of all tags × 10, 15-digit precision
+### TASK INSTRUCTIONS
+1. **Role Extraction**
+   - Extract the exact role/title from the JD → `RoleApplyingFor`.
 
-### 4. SkillsMatch
-- Each mandatory skill: "Yes" if present in resume, "No" if absent.
-- Skills must exactly match JD wording, including punctuation and capitalization.
+2. **Skills Parsing**
+   - **Mandatory skills:** Extract every skill exactly as written in JD → `mandatory_skills`.
+   - **Good-to-have skills:** Extract every skill exactly as written in JD → `good_to_have_skills`.
+   - **All candidate skills:** Extract every skill mentioned in the resume → `parsed_overall_skill_set`.
+   - **Exact skill matching:** 
+       - `parsed_mandatory_skill_set` → mandatory skills present in resume.
+       - `parsed_good_to_have_skills` → good-to-have skills present in resume.
 
-### 5. JSON Output Structure
-Strictly follow this:
+3. **Mandatory Tags Scoring**
+   - `YearsOfRelevantExperience`: 1.0 if candidate meets JD requirement, else 0.0
+   - `EducationQualification`: 1.0 if matches JD, else 0.0
+   - `CoreTechnicalSkills`: (# mandatory skills present ÷ total mandatory skills), 15-digit precision
+   - `ToolsAndPlatformsExpertise`: (# JD mandatory skills present ÷ total mandatory JD skills), 15-digit precision
+   - `MandatoryCertifications`: 1.0 if all present, else 0.0
+   - `LocationWorkEligibility`: 1.0 if matches JD location, else 0.0
+   - `CareerGapStability`: 1.0 if acceptable, else 0.0
+   - `ScoreOutOf10`: average of all tags × 10, 15-digit precision
+
+4. **SkillsMatch**
+   - For each mandatory skill → `"Yes"` if present, `"No"` if absent. Must match JD wording exactly.
+
+### JSON OUTPUT FORMAT
+Strictly follow this schema:
 
 {{
   "job_description": "{jd}",
-  "mandatory_skills": ["skill1", "skill2", "..."],
-  "good_to_have_skills": ["skill1", "skill2", "..."],
+  "mandatory_skills": ["..."],
+  "good_to_have_skills": ["..."],
   "parsed_overall_skill_set": ["..."],
   "parsed_mandatory_skill_set": ["..."],
   "parsed_good_to_have_skills": ["..."],
@@ -61,15 +66,12 @@ Strictly follow this:
   }}
 }}
 
-### 6. RULES (ENFORCED)
-1. Output ONLY JSON, no commentary, no explanations.
-2. All numbers must have **15-digit precision**.
-3. All skills individually listed; do not merge or summarize.
-4. CoreTechnicalSkills and ToolsAndPlatformsExpertise must reflect **proportional completion** of mandatory skills.
-5. All other mandatory tags remain binary 1.0 or 0.0.
-6. Output must be deterministic; same input → same output every run.
-7. CandidateName must be extracted from resume.
-8. Extract every single skill mentioned in JD and resume perfectly; do not miss anything.
-IMPORTANT: OUTPUT ONLY JSON. Do NOT add any text, commentary, explanation, or labels. The output must start with '{' and end with '}'.
+### RULES
+1. Output ONLY JSON, no explanations.
+2. Numbers must have 15-digit precision.
+3. Skills must be extracted exactly, no merging or summarizing.
+4. Deterministic output — same input → same output.
+5. CandidateName must be pulled from resume.
 
+IMPORTANT: Output must start with `{` and end with `}`. Nothing else.
 """

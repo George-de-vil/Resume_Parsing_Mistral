@@ -6,7 +6,7 @@ import requests
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from prompt import PROMPT_TEMPLATE  # Ensure this exists
-
+import re
 # -----------------
 # 1. Load Environment Variables
 # -----------------
@@ -21,7 +21,7 @@ if not API_KEY:
 # 2. Helper Functions
 # -----------------
 def load_resume(file_path):
-    """Load resume text from PDF/DOCX/TXT."""
+    """Load resume text from PDF/DOCX/TXT and clean it."""
     print(f"📄 Loading resume: {file_path}")
     start_time = time.time()
     
@@ -35,10 +35,14 @@ def load_resume(file_path):
         raise ValueError(f"Unsupported file format: {file_path}")
     
     docs = loader.load()
+    
     text = "\n\n".join([d.page_content for d in docs])
+    print(text)
+    # Clean non-printable characters
+    clean_text = re.sub(r'[^\x20-\x7E\n]', '', text)
     
     print(f"⏱ Resume loaded in {time.time() - start_time:.2f}s")
-    return text
+    return clean_text
 
 
 def load_text(file_path):
@@ -53,7 +57,7 @@ def load_text(file_path):
     else:
         with open(file_path, "r", encoding="utf-8") as f:
             text = f.read()
-    
+    print(text)
     print(f"⏱ JD loaded in {time.time() - start_time:.2f}s")
     return text
 
@@ -90,37 +94,56 @@ def call_mistral_api(prompt: str):
         return None
 
 
-def save_json_incremental(parsed_json, folder="outputs", base_name="parsed_output"):
-    """Save JSON with incremental numbering."""
+def save_json_incremental(parsed_json, resume_file_path, folder="outputs"):
+    """
+    Save JSON with filename based on the resume PDF name.
+    - First run: <pdf_name>_output.json
+    - Subsequent runs: <pdf_name>_output2.json, <pdf_name>_output3.json, etc.
+    """
     os.makedirs(folder, exist_ok=True)
-    
+
+    # Extract base name of the PDF without extension
+    base_name = os.path.splitext(os.path.basename(resume_file_path))[0]
+    base_file = f"{base_name}_output"
+
+    # Check existing files starting with base_file
     existing_files = [
-        f for f in os.listdir(folder) if f.startswith(base_name) and f.endswith(".json")
+        f for f in os.listdir(folder)
+        if f.startswith(base_file) and f.endswith(".json")
     ]
-    numbers = [
-        int(f.replace(base_name + "_", "").replace(".json", ""))
-        for f in existing_files if f.replace(base_name + "_", "").replace(".json", "").isdigit()
-    ]
-    next_number = max(numbers) + 1 if numbers else 1
-    output_file = os.path.join(folder, f"{base_name}_{next_number}.json")
     
+    if not existing_files:
+        output_file = os.path.join(folder, f"{base_file}.json")
+    else:
+        # Get numbers from existing files
+        numbers = []
+        for f in existing_files:
+            num_part = f.replace(base_file, "").replace(".json", "")
+            if num_part.isdigit():
+                numbers.append(int(num_part))
+        next_number = max(numbers) + 1 if numbers else 2
+        output_file = os.path.join(folder, f"{base_file}{next_number}.json")
+
+    # Save JSON
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(parsed_json, f, indent=2, ensure_ascii=False)
-    
+
     print(f"✅ JSON saved successfully: {output_file}")
+
 
 
 # -----------------
 # 3. Main Logic
 # -----------------
 def main():
-    jd_path = r"D:\RESUME_PARSING_MISTRAL\jds\Role.docx"
-    resume_path = r"D:\RESUME_PARSING_MISTRAL\resume\Narender Tiparthi-8 years_Redacted.pdf"
+    jd_path = r"D:\RESUME_PARSING_MISTRAL\jds\Seniour_devops_.docx"
+    resume_path = r"D:\RESUME_PARSING_MISTRAL\resume\George_bert.pdf"
     
     # Load files
     jd_text = load_text(jd_path).replace("\n", " ").replace('"', "'")
+    print(jd_text)
     resume_text = load_resume(resume_path).replace("\n", " ").replace('"', "'")
-    
+    print(resume_text)
     # Format prompt
     print("📝 Formatting prompt...")
     start_time = time.time()
@@ -134,7 +157,7 @@ def main():
         print("💾 Parsing response and saving JSON...")
         try:
             parsed_json = json.loads(response_text)
-            save_json_incremental(parsed_json)
+            save_json_incremental(parsed_json, resume_path)
         except json.JSONDecodeError:
             print("❌ Failed to parse JSON, raw response:")
             print(response_text)
