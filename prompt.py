@@ -18,80 +18,70 @@ Step A — Extract JD lists (MANDATORY and GOOD-TO-HAVE)
 4. DO NOT invent new skills, paraphrase, or merge multiple bullets. If a bullet contains multiple items separated by commas, keep that exact string as one element unless the JD already uses separate bullets.
 
 Step B — Extract Resume skills (parsed_overall_skill_set) and CandidateName
-1. Find sections in the resume with headers: "Skills", "Technical Skills", "Core Skills", "Tools", "Technologies", "Expertise", "Skills & Tools", "Competencies", "Stack", "Tools and Platforms", "Certifications", "Projects" and extract all comma- or bullet-separated tokens from those sections. Also search project descriptions for explicit technologies listed as concrete phrases (but only extract phrases that literally appear; do not invent).
-2. For parsed_overall_skill_set include each distinct literal phrase found (trim leading/trailing whitespace). Preserve the original casing and punctuation as it appears in resume text.
-3. CandidateName: extract the candidate's full name **only** if it appears explicitly in the resume (top lines, "Name:", email header, or signature). If you cannot find a full name string clearly present, set CandidateName to "" (empty string). Do not invent names. Do not shorten or expand a name — return the literal string.
+1. Find sections in the resume with headers: "Skills", "Technical Skills", "Core Skills", "Tools", "Technologies", "Expertise", "Skills & Tools", "Competencies", "Stack", "Tools and Platforms", "Certifications", "Projects", or "Work Experience".
+2. From these sections, extract all comma- or bullet-separated tokens that are concrete technical/professional skills: programming languages, libraries, frameworks, tools, platforms, APIs, and software/hardware technologies that are commonly recognized as skills in the tech industry. 
+   - Exclude: degrees, certifications, institute names, project names, research topics, personal details, or any general concepts that are not a recognized skill or tool.
+   - Include each distinct literal skill phrase found (preserve the original casing and punctuation).
+3. CandidateName: extract the candidate's full name if it appears clearly in the resume (top header, "Name:" field, contact section, or email signature). If not found, use the first non-empty line at the very top of the resume that looks like a name. If not possible, set to "".
 
-Step C — Exact matching logic (zero-hallucination)
-1. For each JD mandatory skill string (exact text extracted in Step A), perform a case-insensitive exact-substring search in the resume text:
-   - A match is valid only if the entire JD skill string appears contiguously in the resume text (ignoring leading/trailing whitespace and case differences). Do NOT map synonyms or partial words. Example: JD skill "GitHub Actions" matches resume substring "GitHub Actions" or "github actions" but does NOT match "GitHub workflow" unless the exact phrase "GitHub Actions" appears.
-2. Repeat the same exact-substring rule for good-to-have skills.
-3. If the resume does not contain the JD skill phrase as a contiguous substring, consider it absent.
-4. DO NOT attempt fuzzy matches, stemming, token expansions, or synonym mapping. If a JD phrase is absent, mark it absent and do not invent.
+Step C — Work Experience Extraction
+1. Scan for explicit mentions of total years of experience (e.g., "10 years of experience", "Over 12 years", "8+ years"). Record the highest such total if multiple are found.
+2. If not explicitly mentioned, sum individual company/job durations where they are clearly written (e.g., "2 years at X", "3 years at Y"). Only sum if both the duration and role are explicitly stated in the resume. If unclear or partial, do not assume.
+3. Compute `CandidateTotalExperience` as the total years you found.
+   - If you find multiple sources (explicit total + per-job sums), choose the explicit total statement first, as it is authoritative.
+   - If no explicit or clear duration information exists, set CandidateTotalExperience = 0.0.
 
-Step D — Build parsed_mandatory_skill_set and parsed_good_to_have_skills
-1. parsed_mandatory_skill_set := list of mandatory JD skill strings that matched the resume via Step C.
-2. parsed_good_to_have_skills := list of good-to-have JD skill strings that matched the resume via Step C.
-3. If none match, the lists must be empty [].
+Step D — Exact matching logic for skills
+1. For each JD mandatory skill string (exact text extracted in Step A), perform a case-insensitive exact-substring search in the resume text. 
+   - Match is valid only if the entire JD skill string appears contiguously in the resume text (ignoring case).
+   - Do not perform synonym or fuzzy matching.
+2. Repeat the same rule for good-to-have skills.
 
-Step E — Compute Mandatory Tags (numbers must use 15-digit precision)
-1. YearsOfRelevantExperience: This is a binary flag. Set exactly to 1.000000000000000 if and only if the resume explicitly states total relevant years ≥ the JD’s minimum required. Otherwise set exactly to 0.000000000000000. Do NOT output the number of years itself. Only output 1.000000000000000 or 0.000000000000000.
-2. EducationQualification: 1.000000000000000 if resume explicitly lists the required/acceptable qualification stated in JD, else 0.000000000000000.
-3. CoreTechnicalSkills: compute (# parsed_mandatory_skill_set elements ÷ total mandatory_skills elements). Represent as decimal with exactly 15 digits after the decimal point (e.g., 0.333333333333333). If total mandatory skills count is zero, set CoreTechnicalSkills = 0.000000000000000.
-4. ToolsAndPlatformsExpertise: same calculation as CoreTechnicalSkills (use the same numerator and denominator), 15-digit precision. If denominator zero, 0.000000000000000.
-5. MandatoryCertifications: 1.000000000000000 if the resume explicitly lists every certification exactly as required by JD; else 0.000000000000000. If JD has no certification requirement, set 0.000000000000000.
-6. LocationWorkEligibility: 1.000000000000000 if resume explicitly contains the location or "willing to relocate" or "open to remote" matching JD requirement; else 0.000000000000000.
-7. CareerGapStability: 1.000000000000000 if resume explicitly indicates acceptable continuity per JD (e.g., no unexplained >X years gap if JD forbids it). If JD does not specify, set 1.000000000000000. Otherwise 0.000000000000000.
-8. ScoreOutOf10: compute the arithmetic mean of the seven tag values above × 10. Represent with 15 digits after decimal point.
+Step E — Build parsed_mandatory_skill_set and parsed_good_to_have_skills
+1. parsed_mandatory_skill_set = list of mandatory JD skill strings that matched resume text exactly.
+2. parsed_good_to_have_skills = list of good-to-have JD skill strings that matched resume text exactly.
 
-Step F — SkillsMatch dictionary
-1. For each mandatory skill string from JD produce an entry: "<JD mandatory skill>": "Yes" or "No" depending on whether parsed_mandatory_skill_set includes it.
-2. For each good-to-have skill string from JD also produce an entry: "<JD good-to-have skill>": "Yes" or "No".
-3. Do not add keys for any other skills.
+Step F — Compute Mandatory Tags (15-digit precision)
+1. YearsOfRelevantExperience:
+   - Parse JD to identify the minimum required experience (for example "8 - 10 years" → minimum = 8).
+   - If CandidateTotalExperience >= JD minimum, set YearsOfRelevantExperience = 1.000000000000000.
+   - Otherwise set to 0.000000000000000.
+2. CoreTechnicalSkills: (# parsed_mandatory_skill_set ÷ total mandatory_skills), 15-digit precision. If denominator = 0, output 0.000000000000000.
+3. ToolsAndPlatformsExpertise: same calculation as CoreTechnicalSkills.
+4. ScoreOutOf10: arithmetic mean of the three above × 10, 15-digit precision.
 
---- OUTPUT SCHEMA (MUST BE EXACT JSON ONLY) ---
-Produce ONLY a single JSON object with no extra commentary, text, or markup. The JSON must start with '{' and end with '}'. Use the literal JD and Resume text in the "job_description" field.
+Step G — SkillsMatch dictionary
+1. For each JD mandatory skill, add "<JD mandatory skill>": "Yes" or "No".
+2. For each JD good-to-have skill, add "<JD good-to-have skill>": "Yes" or "No".
 
+--- OUTPUT SCHEMA (JSON ONLY) ---
 {
   "job_description": "{jd}",
-  "mandatory_skills": ["..."],               // exact strings extracted from JD step A
-  "good_to_have_skills": ["..."],            // exact strings extracted from JD step A
-  "parsed_overall_skill_set": ["..."],       // literal phrases extracted from Resume step B
-  "parsed_mandatory_skill_set": ["..."],     // intersection via Step D
-  "parsed_good_to_have_skills": ["..."],     // intersection via Step D
+  "mandatory_skills": ["..."],
+  "good_to_have_skills": ["..."],
+  "parsed_overall_skill_set": ["..."],
+  "parsed_mandatory_skill_set": ["..."],
+  "parsed_good_to_have_skills": ["..."],
   "result": {
     "CandidateName": "<literal name from resume or empty string>",
     "RoleApplyingFor": "<literal role string from JD or empty string>",
+    "CandidateTotalExperience": <numeric total years found, e.g., 10.0>,
     "MandatoryTags": {
       "YearsOfRelevantExperience": 0.000000000000000,
-      "EducationQualification": 0.000000000000000,
       "CoreTechnicalSkills": 0.000000000000000,
-      "ToolsAndPlatformsExpertise": 0.000000000000000,
-      "MandatoryCertifications": 0.000000000000000,
-      "LocationWorkEligibility": 0.000000000000000,
-      "CareerGapStability": 0.000000000000000
+      "ToolsAndPlatformsExpertise": 0.000000000000000
     },
     "SkillsMatch": {
-      "<exact JD skill 1>": "Yes" or "No",
-      "<exact JD skill 2>": "Yes" or "No"
-      // include all JD mandatory and good-to-have skills
+      "<JD skill>": "Yes/No"
     },
     "ScoreOutOf10": 0.000000000000000
   }
 }
 
---- HARD FAIL RULES (IF ANY VIOLATION, RETURN AN EMPTY JSON OBJECT) ---
-1. If you cannot follow any of the exact extraction rules above (for example, you would have to invent data), return exactly: {}
-2. If the output would include any invented skill, synonym mapping, or fuzzy match, return exactly: {}
-3. Do not output any explanation, comments, or additional text. Only the JSON object (or {} on hard fail).
+--- HARD FAIL RULES ---
+1. If experience cannot be extracted, CandidateTotalExperience = 0.0.
+2. If a skill string does not match exactly, mark as "No".
+3. No fuzzy matches, no assumptions, no hallucination.
 
---- FORMATTING NOTES ---
-- All numerical values must show exactly 15 digits after the decimal point.
-- Lists must be JSON arrays. Empty lists: [].
-- Strings must preserve the original wording from source texts (JD/resume) except for trimming whitespace.
 
---- VERY IMPORTANT: ZERO-HALLUCINATION ---
-If a value does not literally appear in the JD or Resume, treat it as absent. Do not infer or calculate unless the instructions above explicitly allow a literal numeric extraction (e.g., "8 years experience").
-
-Now parse and produce the JSON object following the schema above.
 """

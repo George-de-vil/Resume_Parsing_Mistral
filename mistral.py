@@ -148,7 +148,7 @@ def main():
     print(f"{cyan}╚════════════════════════════════════════════════════════╝{reset}\n")
 
     jd_path = r"D:\RESUME_PARSING_MISTRAL\jds\Seniour_devops_.docx"
-    resume_path = r"D:\RESUME_PARSING_MISTRAL\resume\AWS_DevOps_Thiravi-2025 1.pdf"
+    resume_path = r"D:\RESUME_PARSING_MISTRAL\resume\George_bert.pdf"
 
     # JD Extraction
     start = time.time()
@@ -190,4 +190,3 @@ def main():
 # -----------------
 if __name__ == "__main__":
     main()
-
