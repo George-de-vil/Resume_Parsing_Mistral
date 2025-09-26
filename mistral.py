@@ -147,8 +147,8 @@ def main():
     print(f"{cyan}║ 🚀  RESUME PARSING PIPELINE STARTED                     ║{reset}")
     print(f"{cyan}╚════════════════════════════════════════════════════════╝{reset}\n")
 
-    jd_path = r"D:\RESUME_PARSING_MISTRAL\jds\Seniour_devops_.docx"
-    resume_path = r"D:\RESUME_PARSING_MISTRAL\resume\George_bert.pdf"
+    jd_path = r"jds/java_deveploper.docx"
+    resume_path = r"resume/George_bert.pdf"
 
     # JD Extraction
     start = time.time()

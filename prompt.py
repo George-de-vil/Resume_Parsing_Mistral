@@ -44,11 +44,10 @@ Step E — Build parsed_mandatory_skill_set and parsed_good_to_have_skills
 Step F — Compute Mandatory Tags (15-digit precision)
 1. YearsOfRelevantExperience:
    - Parse JD to identify the minimum required experience (for example "8 - 10 years" → minimum = 8).
-   - If CandidateTotalExperience >= JD minimum, set YearsOfRelevantExperience = 1.000000000000000.
-   - Otherwise set to 0.000000000000000.
-2. CoreTechnicalSkills: (# parsed_mandatory_skill_set ÷ total mandatory_skills), 15-digit precision. If denominator = 0, output 0.000000000000000.
-3. ToolsAndPlatformsExpertise: same calculation as CoreTechnicalSkills.
-4. ScoreOutOf10: arithmetic mean of the three above × 10, 15-digit precision.
+   - If CandidateTotalExperience >= JD minimum, set YearsOfRelevantExperience = 1.000000000000000. **You must set this to 1.000000000000000 if candidate experience is equal to or greater than the minimum. Otherwise, set to 0.000000000000000.**
+2. MandatorySkills: (# parsed_mandatory_skill_set ÷ total mandatory_skills), 15-digit precision. If denominator = 0, output 0.000000000000000. **You must calculate this as the number of matched mandatory skills divided by the total number of mandatory skills. Use the lengths of the arrays: MandatorySkills = len(parsed_mandatory_skill_set) / len(mandatory_skills).**
+3. GoodToHaveSkills: (# parsed_good_to_have_skills ÷ total good_to_have_skills), 15-digit precision. If denominator = 0, output 0.000000000000000. **You must calculate this as the number of matched good-to-have skills divided by the total number of good-to-have skills. Use the lengths of the arrays: GoodToHaveSkills = len(parsed_good_to_have_skills) / len(good_to_have_skills). If all good-to-have skills are matched, this value must be 1.0.**
+4. ScoreOutOf10: arithmetic mean of the three above × 10, 15-digit precision. **You must calculate this as ((YearsOfRelevantExperience + MandatorySkills + GoodToHaveSkills) / 3) × 10.**
 
 Step G — SkillsMatch dictionary
 1. For each JD mandatory skill, add "<JD mandatory skill>": "Yes" or "No".
@@ -64,12 +63,12 @@ Step G — SkillsMatch dictionary
   "parsed_good_to_have_skills": ["..."],
   "result": {
     "CandidateName": "<literal name from resume or empty string>",
-    "RoleApplyingFor": "<literal role string from JD or empty string>",
+    "RoleApplyingFor": "<literal role string from JD or empty string; you MUST copy the role exactly as it appears in the JD, with no paraphrasing, translation, or generalization>",
     "CandidateTotalExperience": <numeric total years found, e.g., 10.0>,
     "MandatoryTags": {
       "YearsOfRelevantExperience": 0.000000000000000,
-      "CoreTechnicalSkills": 0.000000000000000,
-      "ToolsAndPlatformsExpertise": 0.000000000000000
+      "MandatorySkills": 0.000000000000000,
+      "GoodToHaveSkills": 0.000000000000000
     },
     "SkillsMatch": {
       "<JD skill>": "Yes/No"
